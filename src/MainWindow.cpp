@@ -1,6 +1,7 @@
 #include "MainWindow.hpp"
 #include "ui_MainWindow.h"
 
+#include <QDirIterator>
 #include <QFileDialog>
 
 #include "MeshEncoded.hpp"
@@ -51,22 +52,29 @@ void MainWindow::on_browseDirBtn_clicked()
     return;
   }
 
-  QStringList meshDecodedFileNames = QDir(opennedPath).entryList({
-                                                                   "*.mesh",
-                                                                   "*.MESH",
-                                                                   "**\\*.mesh",
-                                                                   "**\\*.MESH"
-                                                                 }, QDir::Files
-                                                                 );
-  for (const auto& _file : meshDecodedFileNames)
-  {
-    const auto& _filePath = opennedPath + '/' + _file;
-//    LOG_DEBUG(_filePath);
-    MeshEncoded meshFile(_filePath);
+  connect(&m_loadDirThread, &QThread::started, [=](){
+    QDirIterator dirIt(
+          opennedPath, {"*.mesh", "*.MESH"},
+          QDir::Files, QDirIterator::Subdirectories
+          );
 
-    if (!meshFile.open(QIODevice::ReadOnly))
+    while (dirIt.hasNext())
     {
-      continue;
+      auto _file = dirIt.next();
+      const auto& _filePath = _file;
+      MeshEncoded meshFile(_filePath);
+
+      if (!meshFile.open(QIODevice::ReadOnly))
+      {
+        continue;
+      }
     }
+    LOG_DEBUG("Loaded Dir");
+    m_loadDirThread.quit();
+  });
+  if (m_loadDirThread.isRunning())
+  {
+    m_loadDirThread.quit();
   }
+  m_loadDirThread.start();
 }

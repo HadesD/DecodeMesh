@@ -2,6 +2,7 @@
 #define MAINWINDOW_HPP
 
 #include <QMainWindow>
+#include <QThread>
 
 namespace Ui {
   class MainWindow;
@@ -22,6 +23,7 @@ class MainWindow : public QMainWindow
 
   private:
     Ui::MainWindow *ui;
+    QThread m_loadDirThread;
 };
 
 #endif // MAINWINDOW_HPP
